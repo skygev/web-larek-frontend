@@ -77,11 +77,11 @@ P (Presenter) код презентера не будет выделен в от
 Адрес доставки, email и номер телефона.
 После нажатия "Оплатить" появляется сообщение об успешном оформлении заказа.
 
-![Cхема UML в корневой папке //web-larek-frontend/WebLarek%20UML05022025.pdf](..//web-larek-frontend/WebLarek%20UML05022025.pdf)
+![Cхема UML в корневой папке //web-larek-frontend/WebLarek UML05022025.pdf](..//web-larek-frontend/WebLarek%20UML05022025.pdf)
 
 ## Слой Model
 
-1. Api (Работа с API)
+*1. Api (Работа с API)*
 
 Описание:
 
@@ -101,7 +101,7 @@ P (Presenter) код презентера не будет выделен в от
 
 •	post(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<object> – отправляет POST, PUT или DELETE-запрос, принимает uri, данные и тип метода.
 
-2. LarekApi (Работа с API WebLarek)
+*2. LarekApi (Работа с API WebLarek)*
 
 Описание:
 
