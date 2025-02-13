@@ -5,14 +5,16 @@ import { EventEmitter } from "../components/base/events";
 //Ваши модели в итоге должны будут трансформировать один тип в другой.
 
 type PaymentMethod = 'cash' | 'card'  //при получении или онлайн
+type CardViewType = 'catalog' | 'preview' | 'basket' // как будет выглядеть карточка товара
 
 interface IProduct {
   id: string;
-  description: string;
+  description?: string;
   image: string;
   title: string;
   category: string;
   price: number | null;
+  index?: number;
 }
 
 interface ICatalogModel {
