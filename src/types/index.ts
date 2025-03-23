@@ -9,17 +9,10 @@ type CardViewType = 'catalog' | 'preview' | 'basket' // как будет выг
 
 interface IProduct {
   id: string;
-  description?: string;
-  image: string;
   title: string;
-  category: string;
   price: number | null;
+  description?: string;
+  category: string;
+  image: string;
   index?: number;
 }
-
-interface ICatalogModel {
-  items: IProduct[];
-  setItems(items: IProduct[]): void; //чтобы установить после загрузки api
-  getProduct(id: string): IProduct; //чтобы получить при рендере списков(при необходимости)
-}
-

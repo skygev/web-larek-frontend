@@ -1,5 +1,4 @@
 interface IOrderResult {
-  id?: number; 
+  id: string; 
   total: number; 
-  setTotalPrice(): void; 
 }
