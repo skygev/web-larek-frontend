@@ -271,8 +271,6 @@ P (Presenter) код презентера не будет выделен в от
 
 •	basketButton: HTMLElement – кнопка корзины.
 
-•	itemID: number – идентификатор текущего товара.
-
 Методы:
 
 •	basketCounter(): void – обновляет счетчик корзины, получая данные из модели корзины (BasketModel).
@@ -313,18 +311,18 @@ P (Presenter) код презентера не будет выделен в от
 
 •	address: HTMLElement – поле адреса.
 
-•	button: HTMLButtonElement – кнопка оформления заказа.
+•	button: HTMLButtonElement – кнопка оформления заказа (Далее).
 
 Методы:
 •	constructor(container: HTMLElement, events: IEvents) - инициализирует компонент, связывая его с DOM-элементом (container) и объектом событий (events) для управления отображением и обработкой пользовательских действий.
 
 •	setPaymentMethod(method: PaymentMethod): void – устанавливает способ оплаты, получая данные из модели заказа (OrderModel).
 
-•	getAddress(): string – возвращает адрес, введенный пользователем вручную.
+•	setAddressValue(address: string): void – Устанавливает значение в поле адреса.
 
-•	validateAddress(): boolean – проверяет, корректно ли заполнено поле адреса.
+•	setSubmitEnabled(state: boolean): void - Управляет состоянием кнопки Далее (активна/неактивна)
 
-•	submitOrder(): void – отправляет данные заказа (способ оплаты и адрес) в модель заказа (OrderModel).
+•	showErrors(errors: string[]): void - Отображает переданные сообщения об ошибках
  
 **14. PopupView<T> (Модальное окно Представление)**
 
@@ -358,21 +356,20 @@ P (Presenter) код презентера не будет выделен в от
 
 •	emailInput: HTMLInputElement – поле для ввода email.
 
-•	button: HTMLButtonElement – кнопка подтверждения ввода контактных данных.
+•	button: HTMLButtonElement – кнопка подтверждения ввода контактных данных (Далее).
 
 Методы:
 
-•	constructor(container: HTMLElement, events: IEvents) - инициализирует компонент, связывая его с DOM-элементом (container) и объектом событий (events) для управления отображением и обработкой пользовательских действий.
+•	constructor(container: HTMLElement, events: IEvents) - инициализирует компонент, связывая его с DOM-элементом (container) и объектом событий (events) для управления отображением и обработкой пользовательских действий. При изменении полей генерирует события:
+contacts:phone-changed (с текущим значением), contacts:email-changed. При клике на кнопку - contacts:submit.
 
-•	getPhone(): string – возвращает номер телефона, введенный пользователем вручную.
+•	setPhoneValue(value: string): void - Устанавливает отображаемое значение в поле телефона
 
-•	getEmail(): string – возвращает email, введенный пользователем вручную.
+•	setEmailValue(value: string): void - Устанавливает отображаемое значение в поле email
 
-•	validateContacts(): boolean – проверяет корректность введенных данных (телефона и email).
+•	setSubmitEnabled(state: boolean): void - Управляет состоянием кнопки Далее (активна/неактивна)
 
-•	setContacts(): void – передает введенные данные (телефон и email) в модель контактов (OrderModel).
-
-•	setOrder(orderData: IOrder): void – отправляет заказ, получая данные из модели заказа (OrderModel).
+•	showErrors(errors: string[]): void - Отображает переданные сообщения об ошибках
  
 **16. OrderResultView (Результат заказа Представление)**
 
@@ -454,6 +451,12 @@ P (Presenter) код презентера не будет выделен в от
 
  "contacts:update"   Обновление контактных данных
 
+ "contacts:phone-changed" (с текущим значением) При изменении полей генерирует события
+
+ "contacts:email-changed" При изменении полей генерирует события
+
+ "contacts:submit" При клике на кнопку
+
  "contacts:validate"   Валидация контактной информации
 
  "payment:select-method"   Выбор метода оплаты
@@ -465,6 +468,8 @@ P (Presenter) код презентера не будет выделен в от
  "modal:open"   Открытие модального окна
 
  "modal:close"   Закрытие модального окна
+
+
 
 
 ## Описание Интерфейсов:
