@@ -56,7 +56,7 @@ export type OrderForm = Omit<IOrder, 'total' | 'items'>;
 export interface IOrder {
 	payment?: PaymentMethod;
 	email: string;
-	phone: number;
+	phone: string;
 	address: string;
 	items: string[];
 	total: number;
