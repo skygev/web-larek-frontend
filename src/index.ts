@@ -28,6 +28,10 @@ import { OrderResultView } from './components/View/OrderResultView';
 import { OrderView } from './components/View/OrderView';
 import { ContactsView } from './components/View/ContactsView';
 import { DynamicForm } from './components/View/FormView';
+import {
+	enableValidation,
+	clearInputFields,
+} from '../src/components/validation';
 
 // Инициализация
 const api = new LarekApi(CDN_URL, API_URL);
@@ -68,7 +72,7 @@ events.on('contacts:submit', () => {
 		address: orderModel.getData().address,
 		items: basketModel.items.map((item) => item.id),
 		total: basketModel.total,
-	} as IOrder; // Явное приведение типа
+	} as IOrder;
 
 	api
 		.orderProduct(orderData)
@@ -141,43 +145,6 @@ events.on(
 		events.emit('order:validate');
 	}
 );
-
-// Добавляем обработчик события order:validate
-
-/* events.on('order:validate', () => {
-	const orderData = orderModel.getData();
-	const orderForm = document.querySelector(
-		'.modal__content form[name="order"]'
-	);
-	if (!orderForm) return;
-
-	// Проверяем, был ли `blur` на адресе
-	const orderView = orderForm as unknown as OrderView;
-	const isAddressValid = orderView.isAddressTouched
-		? orderData.address.trim().length > 0
-		: true; // Если поле не трогали, считаем валидным
-
-	const isValid = orderData.payment && isAddressValid;
-
-	// Обновляем состояние кнопки
-	const submitButton = orderForm.querySelector<HTMLButtonElement>(
-		'button[type="submit"]'
-	);
-	if (submitButton) {
-		submitButton.disabled = !isValid;
-	} */
-
-/* 	// Сообщения об ошибках только если поле заполнялось
-	const errorContainer = orderForm.querySelector('.form__errors');
-	if (errorContainer) {
-		const errors = orderModel.getErrors();
-		const filteredErrors = orderView.isAddressTouched
-			? Object.values(errors).filter(Boolean)
-			: [];
-
-		errorContainer.textContent = filteredErrors.join(', ');
-	}
-}); */
 
 // Обновление данных контактов
 events.on(
