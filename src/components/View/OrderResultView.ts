@@ -14,11 +14,11 @@ export class OrderResultView extends Component<IOrderResult> {
 		super(container);
 
 		this._total = ensureElement<HTMLElement>(
-			'.order-success_description',
+			'.order-success__description',
 			this.container
 		);
 		this._close = ensureElement<HTMLElement>(
-			'.order-success_close',
+			'.order-success__close',
 			this.container
 		);
 

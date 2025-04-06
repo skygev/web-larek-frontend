@@ -1,4 +1,4 @@
-import { Component, View } from '../base/component';
+import { View } from '../base/component';
 import { ensureElement, cloneTemplate, createElement } from '../../utils/utils';
 import { EventEmitter } from '../base/events';
 

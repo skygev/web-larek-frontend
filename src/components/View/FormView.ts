@@ -25,6 +25,22 @@ export class DynamicForm<T> extends View<IFormValidation> {
 			'.form__errors',
 			container
 		);
+
+		this.container.addEventListener('submit', (event: SubmitEvent) => {
+			event.preventDefault();
+			this.events.emit(`${this.container.name}:submit`);
+		});
+	}
+
+	protected onInputChange(field: keyof T, value: string) {
+		console.log('[FormView] Emitting:', `${this.container.name}:field-update`, {
+			field,
+			value,
+		});
+		this.events.emit(`${this.container.name}:field-update`, {
+			field,
+			value,
+		});
 	}
 
 	set isValid(valid: boolean) {

@@ -141,21 +141,43 @@ P (Presenter) код презентера не будет выделен в от
 
 Хранит и управляет товарами в корзине. Наследуется от abstract class Model<T>. При изменении данных в BasketModel (например, добавлении товара), BasketView обновляет интерфейс.
 
-Поля:
+Свойства:
 
-• items: Map<string, { price: number}> – Map, где ключ – id товара
+• \_items: Map<string, IProduct> — хранилище товаров по их id
+
+• \_totalValue: number — итоговая сумма всех товаров
 
 Методы:
 
-• add(id: string) – добавляет товар в корзину
+• get items(): IProduct[]
 
-• remove(id: string) – удаляет товар
+Возвращает все товары в корзине в виде массива.
 
-• setTotal(): number – возвращает общую сумму товаров в корзине.
+• get total(): number
 
-• clearBasket() – очищает корзину.
+Возвращает текущую сумму всех товаров в корзине.
 
-• basketCounter() – возвращает количество товаров.
+• add(item: IProduct): void
+
+Добавляет товар в корзину и обновляет сумму.
+
+Эмитит событие basket:changed с актуальными данными.
+
+• remove(id: string): void
+
+Удаляет товар по ID, если он существует.
+
+Пересчитывает сумму и эмитит basket:changed.
+
+• clear(): void
+
+Полностью очищает корзину и обнуляет сумму.
+
+Эмитит basket:changed.
+
+• getData(): IBasketModel
+
+Возвращает текущую структуру данных корзины в виде объекта с методами add, remove, clear.
 
 **6. CatalogModel (Каталог товаров)**
 
@@ -163,7 +185,7 @@ P (Presenter) код презентера не будет выделен в от
 
 Управляет списком товаров. Наследуется от abstract class Model<T>.
 
-Поля:
+Свойства:
 
 • items: IProduct[] – массив товаров.
 
@@ -179,31 +201,101 @@ P (Presenter) код презентера не будет выделен в от
 
 Хранит данные о заказе и обновляет их. Включает информацию о способе оплаты, адресе доставки, контактных данных пользователя и списке товаров. Наследуется от abstract class Model<T>.
 
-Поля:
+Приватные поля:
 
-• id: string – идентификатор заказа.
+• \_payment — выбранный способ оплаты ('card' или 'cash')
 
-• total: number | null – сумма заказа.
+• \_address — введённый адрес доставки
 
-• error?: string – ошибка (если есть).
+• \_email, \_phone — контактные данные пользователя
 
-• payment?: PaymentMethod – выбранный метод оплаты.
+• \_items — список ID товаров в заказе
 
-• address: string – адрес доставки.
+• \_total — итоговая сумма заказа
 
-• phone: number – номер телефона пользователя.
+• \_errors — объект с сообщениями об ошибках валидации
 
-• email: string – email пользователя.
+• \_addressStarted — флаг, активируется после начала ввода адреса
 
-• items: string[] – список идентификаторов товаров в заказе.
+• \_emailTouched, \_phoneTouched — флаги, указывающие, начинал ли пользователь ввод email/телефона
 
-Методы:
+Методы для установки значений:
 
-• validateContacts(): boolean – проверяет, заполнены ли телефон и email.
+• setPayment(method: PaymentMethod): void
 
-• validateOrder(): boolean – проверяет корректность заказа (адрес + контактные данные).
+Устанавливает способ оплаты и запускает валидацию формы заказа.
 
-• setOrderField(field: keyof IOrderModel, value: string | number | PaymentMethod): void – обновляет указанное поле формы. Параметр field может быть одним из ключей интерфейса IOrderModel, а value – значением соответствующего типа.
+Эмитит order:changed.
+
+• setAddress(address: string): void
+
+Устанавливает адрес доставки и запускает валидацию формы заказа.
+
+Эмитит order:changed.
+
+• setEmail(email: string): void
+
+Устанавливает email, помечает поле как "затронутое", запускает валидацию.
+
+Эмитит order:changed.
+
+• setPhone(phone: string): void
+
+Устанавливает телефон, помечает поле как "затронутое", запускает валидацию.
+
+Эмитит order:changed.
+
+• setItems(items: string[]): void
+
+Сохраняет массив ID выбранных товаров.
+
+• setTotal(total: number): void
+
+Сохраняет сумму заказа.
+
+• startAddressValidation(): void
+
+Устанавливает флаг, что пользователь начал вводить адрес.
+
+Запускает повторную валидацию формы.
+
+Валидация:
+
+• validateOrderForm(): boolean
+
+Проверяет: выбран ли способ оплаты и введён ли адрес (если пользователь начал ввод).
+
+Обновляет this.\_errors.
+
+Эмитит orderForm:valid и formErrors:changed.
+
+• validateContactsForm(): boolean
+
+Проверяет поля email и phone.
+
+Валидирует по регулярным выражениям.
+
+Ошибки отображаются только если пользователь уже начал ввод.
+
+Эмитит contactsForm:valid и formErrors:changed.
+
+Получение данных:
+
+• getData(): IOrderModel
+
+Возвращает все текущие данные формы: метод оплаты, адрес, email, телефон, товары и сумму.
+
+• getErrors(): Partial<Record<keyof IOrderModel, string>>
+
+Возвращает текущий объект ошибок.
+
+• reset(): void
+
+Сбрасывает модель в исходное состояние.
+
+Очищает данные и флаги валидации.
+
+Эмитит order:changed.
 
 ## Слой Presenter
 

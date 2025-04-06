@@ -7,7 +7,6 @@ export class OrderView extends DynamicForm<OrderForm> {
 	protected _paymentCard: HTMLButtonElement;
 	protected _paymentCash: HTMLButtonElement;
 	protected _addressInput: HTMLInputElement;
-	protected touchedFields: Set<string> = new Set();
 
 	constructor(container: HTMLFormElement, events: EventEmitter) {
 		super(container, events);
@@ -26,45 +25,35 @@ export class OrderView extends DynamicForm<OrderForm> {
 		);
 
 		this.setupHandlers();
+
+		// Изначально форма невалидна
+		this.isValid = false;
 	}
 
 	private setupHandlers(): void {
+		// Кнопки выбора способа оплаты
 		this._paymentCard.addEventListener('click', () => {
-			this.events.emit('order:payment:change', { method: 'card' });
+			this.payment = 'card';
+			this.onInputChange('payment', 'card');
 		});
 
 		this._paymentCash.addEventListener('click', () => {
-			this.events.emit('order:payment:change', { method: 'cash' });
+			this.payment = 'cash';
+			this.onInputChange('payment', 'cash');
 		});
 
+		// Основной обработчик ввода адреса
 		this._addressInput.addEventListener('input', () => {
-			this.touchedFields.add('address');
-			this.events.emit('order:address:change', {
-				value: this._addressInput.value,
-			});
+			console.log('[OrderView] Address input:', this._addressInput.value);
+			this.onInputChange('address', this._addressInput.value);
 		});
 
-		this._addressInput.addEventListener('focus', () => {
-			this.touchedFields.add('address');
-			this.events.emit('order:address:start');
-		});
-
-		this.container.addEventListener('submit', (event: SubmitEvent) => {
-			event.preventDefault();
-			this.events.emit('order:submit');
-		});
-	}
-
-	updateFormState(isValid: boolean, errors: Record<string, string>): void {
-		this.isValid = isValid;
-
-		if (errors.address) {
-			this._addressInput.classList.add('form__input_error');
-		} else {
-			this._addressInput.classList.remove('form__input_error');
-		}
-
-		this.errorMessages = Object.values(errors);
+		// ✅ Отправляем "address-started" только при первом вводе
+		const handleFirstInput = () => {
+			this.events.emit('order:address-started');
+			this._addressInput.removeEventListener('input', handleFirstInput);
+		};
+		this._addressInput.addEventListener('input', handleFirstInput);
 	}
 
 	set payment(value: PaymentMethod) {
@@ -72,11 +61,14 @@ export class OrderView extends DynamicForm<OrderForm> {
 		this._paymentCash.classList.toggle('button_alt-active', value === 'cash');
 	}
 
+	set address(value: string) {
+		this._addressInput.value = value;
+	}
+
 	resetForm(): void {
 		super.resetForm();
 		this._paymentCard.classList.remove('button_alt-active');
 		this._paymentCash.classList.remove('button_alt-active');
 		this._addressInput.value = '';
-		this.touchedFields.clear();
 	}
 }

@@ -5,11 +5,7 @@ import { API_URL, CDN_URL } from './utils/constants';
 import { cloneTemplate, ensureElement } from './utils/utils';
 import {
 	PaymentMethod,
-	CardViewType,
 	IProduct,
-	IBasketModel,
-	ICatalogModel,
-	ILarekApi,
 	IOrderResult,
 	IOrderModel,
 	IOrder,
@@ -18,7 +14,6 @@ import {
 import { CardView } from './components/View/CardView';
 import { PopupView } from './components/View/PopupView';
 import { EventEmitter } from './components/base/events';
-import { Model } from './components/base/Model';
 import { BasketModel } from './components/Model/BasketModel';
 import { CatalogModel } from './components/Model/CatalogModel';
 import { OrderModel } from './components/Model/OrderModel';
@@ -27,18 +22,6 @@ import { BasketView } from './components/View/BasketView';
 import { OrderResultView } from './components/View/OrderResultView';
 import { OrderView } from './components/View/OrderView';
 import { ContactsView } from './components/View/ContactsView';
-import { DynamicForm } from './components/View/FormView';
-import { enableValidation, clearInputFields } from './components/validation';
-
-// Конфигурация валидации
-const validationConfig = {
-	formSelector: '.form',
-	inputSelector: '.form__input',
-	submitButtonSelector: '.button[type="submit"]',
-	inactiveButtonClass: 'button_disabled',
-	inputErrorClass: 'form__input_error',
-	errorActiveClass: 'form__error_visible',
-};
 
 // Инициализация
 const api = new LarekApi(CDN_URL, API_URL);
@@ -55,83 +38,121 @@ const cardPreviewTemplate = ensureElement<HTMLTemplateElement>('#card-preview');
 const cardBasketTemplate = ensureElement<HTMLTemplateElement>('#card-basket');
 
 // Представления
-const basket = new BasketView(events);
+const page = new PageView(document.body, events);
 const popup = new PopupView(
 	events,
 	ensureElement<HTMLElement>('#modal-container')
 );
-const page = new PageView(document.body, events);
-const order = new OrderView(
+const basketView = new BasketView(events);
+const orderView = new OrderView(
 	cloneTemplate(ensureElement<HTMLTemplateElement>('#order')),
 	events
 );
-const contacts = new ContactsView(
+const contactsView = new ContactsView(
 	cloneTemplate(ensureElement<HTMLTemplateElement>('#contacts')),
 	events
 );
 
-// Включаем валидацию форм
-enableValidation(validationConfig);
+// Обработка валидности формы заказа
+events.on('orderForm:valid', (data: { isValid: boolean }) => {
+	console.log('Order form validity changed:', data.isValid);
+	orderView.isValid = data.isValid;
+});
+
+// Обработка валидности формы контактов
+events.on('contactsForm:valid', (data: { isValid: boolean }) => {
+	contactsView.isValid = data.isValid;
+});
+
+//обработчик события
+events.on('order:address-started', () => {
+	orderModel.startAddressValidation();
+});
+
+// Обработка ошибок
+events.on(
+	'formErrors:changed',
+	(errors: { errors: Partial<Record<keyof IOrderModel, string>> }) => {
+		console.log('Form errors changed:', errors.errors);
+
+		const orderErrors: string[] = [];
+		const contactErrors: string[] = [];
+
+		for (const [field, message] of Object.entries(errors.errors)) {
+			if (['payment', 'address'].includes(field)) {
+				if (message) orderErrors.push(message);
+			}
+			if (['email', 'phone'].includes(field)) {
+				if (message) contactErrors.push(message);
+			}
+		}
+
+		orderView.errorMessages = orderErrors;
+		contactsView.errorMessages = contactErrors;
+	}
+);
 
 // Контакты
 events.on('contacts:submit', () => {
 	const orderData = orderModel.getData();
-	if (orderData.email && orderData.phone) {
-		api
-			.orderProduct({
-				payment: orderData.payment,
-				email: orderData.email,
-				phone: orderData.phone,
-				address: orderData.address,
-				items: basketModel.items.map((item) => item.id),
-				total: basketModel.total,
-			} as IOrder)
-			.then((result: IOrderResult) => {
-				const successView = new OrderResultView(
-					cloneTemplate(ensureElement<HTMLTemplateElement>('#success')),
-					{
-						onClick: () => {
-							popup.close();
-							basketModel.clear();
-						},
-					}
-				);
-				successView.total = result.total;
-				popup.open(successView.render());
-			})
-			.catch((err: Error) => {
-				console.error('Order submission error:', err);
-				contacts.errorMessages = ['Ошибка при оформлении заказа'];
-			});
-	}
+
+	console.log('🔧 Параметры заказа:', {
+		payment: orderData.payment,
+		email: orderData.email,
+		phone: orderData.phone,
+		address: orderData.address,
+		items: basketModel.items,
+		total: basketModel.total,
+	});
+
+	api
+		.orderProduct({
+			payment: orderData.payment,
+			email: orderData.email,
+			phone: orderData.phone,
+			address: orderData.address,
+			items: basketModel.items.map((item) => item.id),
+			total: basketModel.total,
+		} as IOrder)
+		.then((result: IOrderResult) => {
+			console.log('✅ Заказ успешно оформлен:', result);
+
+			const successView = new OrderResultView(
+				cloneTemplate(ensureElement<HTMLTemplateElement>('#success')),
+				{
+					onClick: () => {
+						popup.close();
+						basketModel.clear();
+					},
+				}
+			);
+			successView.total = result.total;
+			popup.open(successView.render());
+		})
+		.catch((err: Error) => {
+			console.error('Ошибка при отправке заказа:', err);
+			contactsView.errorMessages = ['Ошибка при оформлении заказа'];
+		});
 });
 
 // Форма заказа
 events.on('order:open', () => {
-	order.resetForm();
-	popup.open(order.render());
+	orderView.resetForm();
+	popup.open(orderView.render());
 });
 
-events.on(
-	'order:submit',
-	(data: { payment: PaymentMethod; address: string }) => {
-		// Сохраняем данные в модель
-		orderModel.setPayment(data.payment);
-		orderModel.setAddress(data.address);
-
-		// Открываем форму контактов
-		const contactsForm = contacts.render();
-		popup.open(contactsForm);
-	}
-);
+events.on('order:submit', () => {
+	const contactsForm = contactsView.render();
+	popup.open(contactsForm);
+});
 
 // Обновление данных заказа
 events.on(
 	'order:field-update',
-	(data: { field: 'payment' | 'address'; value: string }) => {
+	(data: { field: keyof IOrderModel; value: string }) => {
 		if (data.field === 'payment') {
 			orderModel.setPayment(data.value as PaymentMethod);
-		} else {
+		} else if (data.field === 'address') {
 			orderModel.setAddress(data.value);
 		}
 	}
@@ -140,10 +161,10 @@ events.on(
 // Обновление данных контактов
 events.on(
 	'contacts:field-update',
-	(data: { field: 'email' | 'phone'; value: string }) => {
+	(data: { field: keyof IOrderModel; value: string }) => {
 		if (data.field === 'email') {
 			orderModel.setEmail(data.value);
-		} else {
+		} else if (data.field === 'phone') {
 			orderModel.setPhone(data.value);
 		}
 	}
@@ -151,8 +172,6 @@ events.on(
 
 // Корзина
 events.on('basket:open', () => {
-	const basketView = new BasketView(events);
-
 	function updateBasket() {
 		const items = basketModel.items.map((item, index) => {
 			const card = new CardView(cloneTemplate(cardBasketTemplate), {
@@ -191,7 +210,6 @@ events.on('items:changed', (items: IProduct[]) => {
 		card.image = item.image;
 		card.category = item.category;
 		card.price = item.price ?? 0;
-		card.toggle('catalog');
 		return card.render();
 	});
 
@@ -223,7 +241,6 @@ events.on('card:select', (item: IProduct) => {
 	card.button = basketModel.items.some((i) => i.id === item.id)
 		? 'Удалить из корзины'
 		: 'В корзину';
-	card.toggle('preview');
 
 	popup.open(card.render());
 });

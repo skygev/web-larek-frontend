@@ -24,39 +24,20 @@ export class ContactsView extends DynamicForm<OrderForm> {
 
 	private setupHandlers(): void {
 		this._emailInput.addEventListener('input', () => {
-			this.events.emit('contacts:email:change', {
-				value: this._emailInput.value,
-			});
+			this.onInputChange('email', this._emailInput.value);
 		});
 
 		this._phoneInput.addEventListener('input', () => {
-			this.events.emit('contacts:phone:change', {
-				value: this._phoneInput.value,
-			});
-		});
-
-		this.container.addEventListener('submit', (event: SubmitEvent) => {
-			event.preventDefault();
-			this.events.emit('contacts:submit');
+			this.onInputChange('phone', this._phoneInput.value);
 		});
 	}
 
-	updateFormState(isValid: boolean, errors: Record<string, string>): void {
-		this.isValid = isValid;
+	set email(value: string) {
+		this._emailInput.value = value;
+	}
 
-		if (errors.email) {
-			this._emailInput.classList.add('form__input_error');
-		} else {
-			this._emailInput.classList.remove('form__input_error');
-		}
-
-		if (errors.phone) {
-			this._phoneInput.classList.add('form__input_error');
-		} else {
-			this._phoneInput.classList.remove('form__input_error');
-		}
-
-		this.errorMessages = Object.values(errors);
+	set phone(value: string) {
+		this._phoneInput.value = value;
 	}
 
 	resetForm(): void {
