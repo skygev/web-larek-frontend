@@ -379,19 +379,41 @@ P (Presenter) код презентера не будет выделен в от
 
 Поля:
 
-• template: HTMLTemplateElement - Статическое поле, которое содержит HTML-шаблон корзины.
-• list, total, checkoutButton: HTMLElement – элементы интерфейса.
+• static template — получает HTML-шаблон корзины из DOM (#basket)
+
+• \_list: HTMLElement — список элементов корзины (контейнер)
+
+• \_total: HTMLElement — элемент с отображением суммы заказа
+
+• \_button: HTMLElement — кнопка оформления заказа
+
+• items: HTMLElement[] — массив DOM-элементов товаров (используется в рендере)
+
+Конструктор:
+
+constructor(events: EventEmitter)
+
+• Клонирует шаблон корзины.
+
+• Находит и сохраняет необходимые DOM-элементы: список товаров, сумму, кнопку.
+
+• Назначает обработчик на кнопку "Оформить": при клике эмитит событие order:open.
+
+• Выбрасывает ошибку, если какие-либо элементы не найдены (через ensureElement).
 
 Методы:
-• constructor(container: HTMLElement, events: IEvents) - инициализирует компонент, связывая его с DOM-элементом (container) и объектом событий (events) для управления отображением и обработкой пользовательских действий.
 
-• setTotal(): number – обновляет сумму товаров в корзине, получая данные из модели корзины (BasketModel).
+• setItems(items: HTMLElement[]): void
+Принимает список DOM-элементов товаров.
 
-• setItems(items: Map<string, { price: number }>): void – принимает данные о товарах в корзине и отображает их.
+Если список не пуст — заменяет содержимое \_list и активирует кнопку.
 
-• render(): HTMLElement - отвечает за создание DOM-элемента (или его обновление) на основе текущего состояния данных.
+Если список пуст — отображает текст "Корзина пуста" и дизактивирует кнопку.
 
-• setCheckoutButtonState(enabled: boolean): void - Управляет состоянием кнопки "оформить заказ" (включает или выключает её)
+• setTotal(total: number): void
+Обновляет текст в элементе суммы (\_total).
+
+Отображает итоговую стоимость в формате 1230 синапсов.
 
 **13. OrderView (Форма заказа Представление)**
 
@@ -401,22 +423,53 @@ P (Presenter) код презентера не будет выделен в от
 
 Поля:
 
-• payment: PaymentMethod – способ оплаты.
+• \_paymentCard — кнопка выбора оплаты онлайн (<button name="card">)
 
-• address: HTMLElement – поле адреса.
+• \_paymentCash — кнопка выбора оплаты при получении (<button name="cash">)
 
-• button: HTMLButtonElement – кнопка оформления заказа (Далее).
+• \_addressInput — поле ввода адреса доставки (<input name="address">)
+
+Конструктор:
+
+constructor(container: HTMLFormElement, events: EventEmitter)
+
+• Вызывает super(container, events) из DynamicForm
+
+• Инициализирует DOM-элементы через ensureElement
+
+• Вызывает setupHandlers() для назначения обработчиков событий
+
+• Устанавливает this.isValid = false — начальное состояние формы (невалидна)
 
 Методы:
-• constructor(container: HTMLElement, events: IEvents) - инициализирует компонент, связывая его с DOM-элементом (container) и объектом событий (events) для управления отображением и обработкой пользовательских действий.
 
-• setPaymentMethod(method: PaymentMethod): void – устанавливает способ оплаты, получая данные из модели заказа (OrderModel).
+• setupHandlers()
 
-• setAddressValue(address: string): void – Устанавливает значение в поле адреса.
+Клик по "Картой" → активирует card, эмитит order:field-update
 
-• setSubmitEnabled(state: boolean): void - Управляет состоянием кнопки Далее (активна/неактивна)
+Клик по "Наличными" → активирует cash, эмитит order:field-update
 
-• showErrors(errors: string[]): void - Отображает переданные сообщения об ошибках
+Ввод адреса → эмитит order:field-update
+
+Первый ввод адреса → эмитит order:address-started (однократно)
+
+• resetForm()
+
+Сбрасывает состояние формы
+
+Убирает выделение с кнопок оплаты
+
+Очищает поле адреса
+
+Сеттеры:
+
+• payment
+
+Обновляет стили кнопок оплаты в зависимости от выбора
+
+• address
+
+Устанавливает значение в поле адреса
 
 **14. PopupView<T> (Модальное окно Представление)**
 
@@ -426,9 +479,9 @@ P (Presenter) код презентера не будет выделен в от
 
 Поля:
 
-• closeButton: HTMLButtonElement (protected) – кнопка закрытия.
+• \_closeButton — кнопка закрытия модального окна (.modal\_\_close)
 
-• content: HTMLElement (protected) – содержимое окна.
+• \_content — контейнер, в который вставляется содержимое (.modal\_\_content)
 
 Методы:
 
@@ -446,24 +499,51 @@ P (Presenter) код презентера не будет выделен в от
 
 Поля:
 
-• phoneInput: HTMLInputElement – поле для ввода номера телефона.
+• \_emailInput — поле для ввода email (input[name="email"])
 
-• emailInput: HTMLInputElement – поле для ввода email.
-
-• button: HTMLButtonElement – кнопка подтверждения ввода контактных данных (Далее).
+• \_phoneInput — поле для ввода телефона (input[name="phone"])
 
 Методы:
 
-• constructor(container: HTMLElement, events: IEvents) - инициализирует компонент, связывая его с DOM-элементом (container) и объектом событий (events) для управления отображением и обработкой пользовательских действий. При изменении полей генерирует события:
-contacts:phone-changed (с текущим значением), contacts:email-changed. При клике на кнопку - contacts:submit.
+• constructor(container: HTMLElement, events: IEvents)
 
-• setPhoneValue(value: string): void - Устанавливает отображаемое значение в поле телефона
+Вызывает super() — инициализирует базовую логику формы (DynamicForm)
 
-• setEmailValue(value: string): void - Устанавливает отображаемое значение в поле email
+Ищет и сохраняет DOM-элементы:
 
-• setSubmitEnabled(state: boolean): void - Управляет состоянием кнопки Далее (активна/неактивна)
+поле email — input[name="email"]
 
-• showErrors(errors: string[]): void - Отображает переданные сообщения об ошибках
+поле телефона — input[name="phone"]
+
+Вызывает setupHandlers() для подключения обработчиков ввода
+
+Аргументы:
+
+container — DOM-элемент формы (<form>)
+
+events — экземпляр EventEmitter, используемый для эмита событий
+
+Методы:
+
+• setupHandlers()
+
+Назначает обработчики input на поля:
+
+Изменение email → эмитит contacts:field-update
+
+Изменение phone → эмитит contacts:field-update
+
+• resetForm()
+
+Вызывает super.resetForm()
+
+Очищает поля email и телефона
+
+Сеттеры:
+
+• email — устанавливает значение в поле email
+
+• phone — устанавливает значение в поле телефона
 
 **16. OrderResultView (Результат заказа Представление)**
 
@@ -473,19 +553,25 @@ contacts:phone-changed (с текущим значением), contacts:email-ch
 
 Поля:
 
-• id: HTMLElement – элемент для отображения идентификатора заказа.
+• \_total — элемент, в который выводится итоговая сумма заказа (.order-success\_\_description)
 
-• total: HTMLElement – элемент для отображения общей суммы заказа.
+• \_close — кнопка «За новыми покупками!» (.order-success\_\_close)
 
-• error?: HTMLElement – элемент для отображения ошибки (если есть).
+Конструктор:
 
-• button: HTMLElement – кнопка для возвращения на главный экран.
+• constructor(container: HTMLElement, actions: IOrderResultActions)
 
-Методы:
+Инициализирует компонент через super(container)
 
-• constructor(container: HTMLElement, events: IEvents)
+Находит элементы суммы и кнопки закрытия
 
-• setTotal(): number – отображает сумму заказа, получает данные из OrderModel.
+Назначает обработчик на кнопку закрытия (actions.onClick)
+
+Сеттер total
+
+• set total(value: number)
+
+Устанавливает текст: Списано {value} синапсов в \_total
 
 **17. CardView (Отображение карточки товара)**
 
@@ -495,73 +581,95 @@ contacts:phone-changed (с текущим значением), contacts:email-ch
 
 Поля:
 
-• title: HTMLElement – заголовок товара.
-
-• image?: HTMLImageElement – изображение товара.
-
-• price: HTMLElement – цена товара.
-
-• description?: HTMLElement - описание товара (только для превью).
-
-• category?: HTMLElement – категория товара.
-
-• button?: HTMLButtonElement – кнопка добавления товара в корзину (только для превью).
-
-• index?: HTMLElement - порядковый номер товара в корзине (только для корзины).
+• \_title HTMLElement Заголовок товара
+• \_image HTMLImageElement? Изображение
+• \_category HTMLElement? Категория
+• \_price HTMLElement Цена
+• \_button HTMLButtonElement? Кнопка добавления
+• \_description HTMLElement? Описание товара (для preview)
+• \_index HTMLElement? Индекс товара в корзине
 
 Методы:
 
 • constructor(container: HTMLElement, actions?: ICardActions) - Инициализирует карточку товара, связывая её с DOM-элементом (container) и опциональными действиями (actions) для обработки кликов и других взаимодействий.
 
+Метод:
+
+• toggle(modifier: CardViewType)
+
+Заменяет CSS-модификаторы .card--catalog, .card--preview, .card--basket в зависимости от представления карточки
+
+Сеттеры и геттеры:
+
+• id: data-id в DOM
+
+• title: заголовок карточки
+
+• price: цена в формате N синапсов, либо Бесценно
+
+также отключает кнопку, если нет цены
+
+• category: категория товара
+
+• image: изображение карточки
+
+• description: описание (только для preview)
+
+• button: текст кнопки (например, "В корзину")
+
+• index: порядковый номер (только для корзины)
+
 **18. type CardViewType = 'catalog' | 'preview' | 'basket' // как будет выглядеть карточка товара**
 
 ## Описание событий
 
-"product:add-to-cart" Добавление товара в корзину
+Общие
 
-"product:remove-from-cart" Удаление товара из корзины
+• items:changed Каталог товаров обновлён (после загрузки из API)
 
-"cart:clear" Очистка корзины
+• popup:open Открытие любого модального окна
 
-"cart:update-counter" Обновление количества товаров в корзине
+• popup:close Закрытие модального окна
 
-"cart:calculate-total" Пересчет суммы товаров в корзине
+Корзина
 
-"order:submit" Отправка заказа
+• basket:open Клик по иконке корзины (открыть модалку)
 
-"order:success" Успешное оформление заказа
+• basket:changed Изменения в корзине: добавление/удаление товара, пересчёт суммы
 
-"order:error" Ошибка при оформлении заказа
+Товары
 
-"order:update-status" Обновление статуса заказа
+• card:select Клик по карточке товара (для превью или добавления в корзину)
 
-"form:validate" Проверка валидности формы
+• product:add-to-cart Добавление товара в корзину
 
-"form:update" Обновление данных в форме заказа
+• product:remove-from-cart Удаление товара из корзины
 
-"popup:open" Открытие всплывающего окна
+Оформление заказа
 
-"popup:close" Закрытие всплывающего окна
+• order:open Нажатие "Оформить заказ" в корзине
 
-"contacts:update" Обновление контактных данных
+• order:address-started Пользователь начал вводить адрес (1 раз)
 
-"contacts:phone-changed" (с текущим значением) При изменении полей генерирует события
+• order:field-update Изменение поля в форме заказа (адрес или способ оплаты)
 
-"contacts:email-changed" При изменении полей генерирует события
+• orderForm:valid Форма заказа валидна/невалидна
 
-"contacts:submit" При клике на кнопку
+• order:submit Пользователь нажал "Далее" после заполнения формы заказа
 
-"contacts:validate" Валидация контактной информации
+• order:success Заказ успешно отправлен и получен ответ от API
 
-"payment:select-method" Выбор метода оплаты
+• order:error Ошибка при отправке заказа
 
-"page:render-products" Отрисовка товаров на странице
+Контактные данные
 
-"page:render-cart" Отрисовка содержимого корзины
+• contacts:field-update Изменение поля email или phone
 
-"modal:open" Открытие модального окна
+• contacts:submit Нажатие на кнопку "Оплатить"
 
-"modal:close" Закрытие модального окна
+• contactsForm:valid Валидация контактной формы (email + телефон)
+
+• formErrors:changed Изменение набора ошибок (для отображения в UI)
 
 ## Описание Интерфейсов:
 

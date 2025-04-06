@@ -111,7 +111,7 @@ export class OrderModel extends Model<IOrderModel> {
 				console.log('Ошибка email: не прошёл regex');
 			} else {
 				delete this._errors.email;
-				console.log('Email валиден ✅');
+				console.log('Email валиден');
 			}
 		}
 
@@ -125,7 +125,7 @@ export class OrderModel extends Model<IOrderModel> {
 				console.log('Ошибка phone: не прошёл regex');
 			} else {
 				delete this._errors.phone;
-				console.log('Телефон валиден ✅');
+				console.log('Телефон валиден');
 			}
 		}
 

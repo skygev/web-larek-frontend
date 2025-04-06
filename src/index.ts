@@ -115,7 +115,7 @@ events.on('contacts:submit', () => {
 			total: basketModel.total,
 		} as IOrder)
 		.then((result: IOrderResult) => {
-			console.log('✅ Заказ успешно оформлен:', result);
+			console.log('Заказ успешно оформлен:', result);
 
 			const successView = new OrderResultView(
 				cloneTemplate(ensureElement<HTMLTemplateElement>('#success')),
