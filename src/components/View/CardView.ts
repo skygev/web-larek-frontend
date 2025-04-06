@@ -7,7 +7,7 @@ interface ICard {
 	image?: string;
 	category?: string;
 	price: number;
-	button?: HTMLButtonElement;
+	button?: string;
 	description?: string;
 	index?: number;
 	renderProductItem(): void;

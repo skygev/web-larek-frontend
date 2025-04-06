@@ -7,7 +7,7 @@ export class OrderView extends DynamicForm<OrderForm> {
 	protected _paymentCard: HTMLButtonElement;
 	protected _paymentCash: HTMLButtonElement;
 	protected _addressInput: HTMLInputElement;
-	protected _submitButton: HTMLButtonElement;
+	protected touchedFields: Set<string> = new Set();
 
 	constructor(container: HTMLFormElement, events: EventEmitter) {
 		super(container, events);
@@ -24,52 +24,59 @@ export class OrderView extends DynamicForm<OrderForm> {
 			'input[name="address"]',
 			this.container
 		);
-		this._submitButton = ensureElement<HTMLButtonElement>(
-			'button[type="submit"]',
-			this.container
-		);
 
-		// Блокируем кнопку при инициализации
-		this._submitButton.disabled = true;
+		this.setupHandlers();
+	}
 
+	private setupHandlers(): void {
 		this._paymentCard.addEventListener('click', () => {
-			this.payment = 'card';
-			this.validateForm();
+			this.events.emit('order:payment:change', { method: 'card' });
 		});
 
 		this._paymentCash.addEventListener('click', () => {
-			this.payment = 'cash';
-			this.validateForm();
+			this.events.emit('order:payment:change', { method: 'cash' });
 		});
 
 		this._addressInput.addEventListener('input', () => {
-			this.validateForm();
+			this.touchedFields.add('address');
+			this.events.emit('order:address:change', {
+				value: this._addressInput.value,
+			});
+		});
+
+		this._addressInput.addEventListener('focus', () => {
+			this.touchedFields.add('address');
+			this.events.emit('order:address:start');
+		});
+
+		this.container.addEventListener('submit', (event: SubmitEvent) => {
+			event.preventDefault();
+			this.events.emit('order:submit');
 		});
 	}
 
-	private validateForm(): void {
-		const isAddressValid = this._addressInput.value.trim().length > 0;
-		const isPaymentValid = !!this.payment;
+	updateFormState(isValid: boolean, errors: Record<string, string>): void {
+		this.isValid = isValid;
 
-		this._submitButton.disabled = !(isAddressValid && isPaymentValid);
-	}
+		if (errors.address) {
+			this._addressInput.classList.add('form__input_error');
+		} else {
+			this._addressInput.classList.remove('form__input_error');
+		}
 
-	set address(value: string) {
-		this._addressInput.value = value;
-		this.validateForm();
+		this.errorMessages = Object.values(errors);
 	}
 
 	set payment(value: PaymentMethod) {
 		this._paymentCard.classList.toggle('button_alt-active', value === 'card');
 		this._paymentCash.classList.toggle('button_alt-active', value === 'cash');
-		this.validateForm();
 	}
 
-	get payment(): PaymentMethod | null {
-		if (this._paymentCard.classList.contains('button_alt-active'))
-			return 'card';
-		if (this._paymentCash.classList.contains('button_alt-active'))
-			return 'cash';
-		return null;
+	resetForm(): void {
+		super.resetForm();
+		this._paymentCard.classList.remove('button_alt-active');
+		this._paymentCash.classList.remove('button_alt-active');
+		this._addressInput.value = '';
+		this.touchedFields.clear();
 	}
 }

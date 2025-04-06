@@ -106,24 +106,24 @@ events.on('contacts:submit', () => {
 	}
 });
 
-// Форма заказа - исправленная версия
+// Форма заказа
 events.on('order:open', () => {
-	orderModel.reset();
-	const orderForm = order.render();
-	const formElement = orderForm.querySelector('form');
-	if (formElement) {
-		clearInputFields(formElement, validationConfig);
-	}
-	popup.open(orderForm);
+	order.resetForm();
+	popup.open(order.render());
 });
 
-events.on('order:submit', () => {
-	const orderData = orderModel.getData();
-	if (order.payment && orderData.address) {
+events.on(
+	'order:submit',
+	(data: { payment: PaymentMethod; address: string }) => {
+		// Сохраняем данные в модель
+		orderModel.setPayment(data.payment);
+		orderModel.setAddress(data.address);
+
+		// Открываем форму контактов
 		const contactsForm = contacts.render();
 		popup.open(contactsForm);
 	}
-});
+);
 
 // Обновление данных заказа
 events.on(

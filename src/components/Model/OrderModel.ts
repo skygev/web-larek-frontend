@@ -10,6 +10,8 @@ export class OrderModel extends Model<IOrderModel> {
 	private _total: number = 0;
 	private _errors: Partial<Record<keyof IOrderModel, string>> = {};
 	private _addressStarted: boolean = false;
+	private _emailStarted: boolean = false;
+	private _phoneStarted: boolean = false;
 
 	setPayment(method: PaymentMethod): void {
 		this._payment = method;
@@ -45,32 +47,70 @@ export class OrderModel extends Model<IOrderModel> {
 		this.emitChanges('order:changed');
 	}
 
+	// Validation methods
 	validate(): boolean {
 		this._errors = {};
 
-		// Проверяем только поля, относящиеся к текущему этапу
+		// Payment validation
 		if (!this._payment) {
 			this._errors.payment = 'Необходимо выбрать способ оплаты';
 		}
 
-		// Проверяем адрес только если пользователь начал его вводить
-		if (this._addressStarted && this._address.trim().length === 0) {
+		// Address validation (only if started)
+		if (this._addressStarted && !this._address.trim()) {
 			this._errors.address = 'Необходимо указать адрес';
 		}
 
-		// Проверяем email и телефон только если пользователь начал их вводить
-		if (this._email.length > 0 && !this._email) {
-			this._errors.email = 'Необходимо указать email';
+		// Email validation (only if started)
+		if (this._emailStarted) {
+			if (!this._email.trim()) {
+				this._errors.email = 'Необходимо указать email';
+			} else if (!this.validateEmail(this._email)) {
+				this._errors.email = 'Некорректный email';
+			}
 		}
 
-		if (this._phone.length > 0 && !this._phone) {
-			this._errors.phone = 'Необходимо указать телефон';
+		// Phone validation (only if started)
+		if (this._phoneStarted) {
+			if (!this._phone.trim()) {
+				this._errors.phone = 'Необходимо указать телефон';
+			} else if (!this.validatePhone(this._phone)) {
+				this._errors.phone = 'Некорректный телефон';
+			}
 		}
 
 		this.emitChanges('formErrors:changed', { errors: this._errors });
 		return Object.keys(this._errors).length === 0;
 	}
 
+	// Track field interactions
+	startAddressInput(): void {
+		this._addressStarted = true;
+		this.validate();
+	}
+
+	startEmailInput(): void {
+		this._emailStarted = true;
+		this.validate();
+	}
+
+	startPhoneInput(): void {
+		this._phoneStarted = true;
+		this.validate();
+	}
+
+	// Helper validation methods
+	private validateEmail(email: string): boolean {
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(email);
+	}
+
+	private validatePhone(phone: string): boolean {
+		const re = /^\+?[\d\s\-\(\)]{7,}$/;
+		return re.test(phone);
+	}
+
+	// Getters
 	getData(): IOrderModel {
 		return {
 			payment: this._payment,
@@ -86,19 +126,15 @@ export class OrderModel extends Model<IOrderModel> {
 		return this._errors;
 	}
 
-	clearErrors(): void {
-		this._errors = {};
-		this.emitChanges('formErrors:changed', { errors: this._errors });
-	}
-
 	reset(): void {
 		this._payment = null;
 		this._address = '';
 		this._email = '';
 		this._phone = '';
 		this._errors = {};
-		this._addressStarted = false; // Сбрасываем флаг при сбросе модели
+		this._addressStarted = false;
+		this._emailStarted = false;
+		this._phoneStarted = false;
 		this.emitChanges('order:changed');
-		this.emitChanges('formErrors:changed', { errors: this._errors });
 	}
 }

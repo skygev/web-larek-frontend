@@ -1,12 +1,11 @@
-import { DynamicForm } from './FormView';
 import { OrderForm } from '../../types';
 import { ensureElement } from '../../utils/utils';
 import { EventEmitter } from '../base/events';
+import { DynamicForm } from './FormView';
 
 export class ContactsView extends DynamicForm<OrderForm> {
 	protected _emailInput: HTMLInputElement;
 	protected _phoneInput: HTMLInputElement;
-	protected _submitButton: HTMLButtonElement;
 
 	constructor(container: HTMLFormElement, events: EventEmitter) {
 		super(container, events);
@@ -19,37 +18,50 @@ export class ContactsView extends DynamicForm<OrderForm> {
 			'input[name="phone"]',
 			this.container
 		);
-		this._submitButton = ensureElement<HTMLButtonElement>(
-			'button[type="submit"]',
-			this.container
-		);
 
-		// Блокируем кнопку при инициализации
-		this._submitButton.disabled = true;
+		this.setupHandlers();
+	}
 
+	private setupHandlers(): void {
 		this._emailInput.addEventListener('input', () => {
-			this.validateContacts();
+			this.events.emit('contacts:email:change', {
+				value: this._emailInput.value,
+			});
 		});
 
 		this._phoneInput.addEventListener('input', () => {
-			this.validateContacts();
+			this.events.emit('contacts:phone:change', {
+				value: this._phoneInput.value,
+			});
+		});
+
+		this.container.addEventListener('submit', (event: SubmitEvent) => {
+			event.preventDefault();
+			this.events.emit('contacts:submit');
 		});
 	}
 
-	private validateContacts(): void {
-		const isEmailValid = this._emailInput.validity.valid;
-		const isPhoneValid = this._phoneInput.validity.valid;
+	updateFormState(isValid: boolean, errors: Record<string, string>): void {
+		this.isValid = isValid;
 
-		this._submitButton.disabled = !(isEmailValid && isPhoneValid);
+		if (errors.email) {
+			this._emailInput.classList.add('form__input_error');
+		} else {
+			this._emailInput.classList.remove('form__input_error');
+		}
+
+		if (errors.phone) {
+			this._phoneInput.classList.add('form__input_error');
+		} else {
+			this._phoneInput.classList.remove('form__input_error');
+		}
+
+		this.errorMessages = Object.values(errors);
 	}
 
-	set email(value: string) {
-		this._emailInput.value = value;
-		this.validateContacts();
-	}
-
-	set phone(value: string) {
-		this._phoneInput.value = value;
-		this.validateContacts();
+	resetForm(): void {
+		super.resetForm();
+		this._emailInput.value = '';
+		this._phoneInput.value = '';
 	}
 }
