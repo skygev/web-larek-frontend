@@ -48,7 +48,7 @@ export class OrderView extends DynamicForm<OrderForm> {
 			this.onInputChange('address', this._addressInput.value);
 		});
 
-		// ✅ Отправляем "address-started" только при первом вводе
+		// Отправляем "address-started" только при первом вводе
 		const handleFirstInput = () => {
 			this.events.emit('order:address-started');
 			this._addressInput.removeEventListener('input', handleFirstInput);
