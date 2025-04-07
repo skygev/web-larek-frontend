@@ -26,10 +26,17 @@ export class CardView extends Component<ICard> {
 	protected _description?: HTMLElement;
 	protected _index?: HTMLElement;
 
+	protected categoryModifiers: Record<string, string> = {
+		soft: 'card__category_soft',
+		hard: 'card__category_hard',
+		other: 'card__category_other',
+		additional: 'card__category_additional',
+		button: 'card__category_button',
+	};
+
 	constructor(container: HTMLElement, actions?: ICardActions) {
 		super(container);
 
-		// Инициализация элементов
 		this._title = ensureElement<HTMLElement>('.card__title', container);
 		this._image = container.querySelector('.card__image') || undefined;
 		this._category = container.querySelector('.card__category') || undefined;
@@ -39,7 +46,6 @@ export class CardView extends Component<ICard> {
 			container.querySelector('.card__description') || undefined;
 		this._index = container.querySelector('.basket__item-index') || undefined;
 
-		// Настройка обработчиков событий
 		if (actions?.onClick) {
 			if (this._button) {
 				this._button.addEventListener('click', actions.onClick);
@@ -51,15 +57,12 @@ export class CardView extends Component<ICard> {
 
 	toggle(modifier: CardViewType) {
 		const viewTypes: CardViewType[] = ['catalog', 'preview', 'basket'];
-
 		viewTypes.forEach((type) =>
 			this.container.classList.remove(`card--${type}`)
 		);
-
 		this.container.classList.add(`card--${modifier}`);
 	}
 
-	// Сеттер и геттер для ID
 	set id(value: string) {
 		if (value) {
 			this.container.dataset.id = value.trim();
@@ -70,7 +73,6 @@ export class CardView extends Component<ICard> {
 		return this.container.dataset.id ?? '';
 	}
 
-	// Сеттер и геттер для Title
 	set title(value: string) {
 		this._title && this.setText(this._title, value.trim());
 	}
@@ -79,7 +81,6 @@ export class CardView extends Component<ICard> {
 		return this._title?.textContent?.trim() ?? '';
 	}
 
-	// Сеттер для Price
 	set price(value: number) {
 		this.setText(this._price, value ? `${value} синапсов` : 'Бесценно');
 		if (this._button) {
@@ -87,33 +88,55 @@ export class CardView extends Component<ICard> {
 		}
 	}
 
-	// Сеттер для Category
 	set category(value: string) {
-		this.setText(this._category, value);
+		if (this._category) {
+			// Очищаем старые классы
+			Object.values(this.categoryModifiers).forEach((mod) =>
+				this._category!.classList.remove(mod)
+			);
+
+			// Получаем ключ из значения
+			const categoryKey = this.getCategoryKey(value);
+			const className = this.categoryModifiers[categoryKey];
+
+			if (className) {
+				this._category.classList.add(className);
+			}
+
+			this.setText(this._category, value);
+		}
 	}
 
-	// Сеттер для Image
+	private getCategoryKey(value: string): string {
+		const reverseMap: Record<string, string> = {
+			'софт-скил': 'soft',
+			'хард-скил': 'hard',
+			другое: 'other',
+			дополнительно: 'additional',
+			'по кнопке': 'button',
+		};
+
+		return reverseMap[value.toLowerCase()] || 'other';
+	}
+
 	set image(value: string) {
 		if (this._image) {
 			this.setImage(this._image, value, this.title || 'Без названия');
 		}
 	}
 
-	// Сеттер для Description
 	set description(value: string) {
 		if (this._description) {
 			this.setText(this._description, value);
 		}
 	}
 
-	// Сеттер для Button
 	set button(value: string) {
 		if (this._button) {
 			this.setText(this._button, value);
 		}
 	}
 
-	// Сеттер для Index
 	set index(value: number) {
 		if (this._index) {
 			this.setText(this._index, `${value}`);
