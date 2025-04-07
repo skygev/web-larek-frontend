@@ -24,9 +24,20 @@ export class OrderResultView extends Component<IOrderResult> {
 
 		if (actions?.onClick) {
 			this._close.addEventListener('click', actions.onClick);
+
+			// Добавим возможность закрытия кликом на фон, если есть .modal
+			const modal = this.container.closest('.modal');
+			if (modal) {
+				modal.addEventListener('click', (event) => {
+					if (event.target === modal) {
+						actions.onClick();
+					}
+				});
+			}
 		}
 	}
 
+	// Добавляем сеттер total
 	set total(value: number) {
 		this.setText(this._total, `Списано ${value} синапсов`);
 	}

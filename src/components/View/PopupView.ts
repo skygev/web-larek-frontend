@@ -43,7 +43,7 @@ export class PopupView extends View<HTMLElement> {
 	close() {
 		this.container.classList.remove('modal_active');
 		this._content.innerHTML = '';
-		this.events.emit('modal:close');
+		this.events.emit('popup:close');
 	}
 
 	render(data: Partial<HTMLElement> & IPopup): HTMLElement {

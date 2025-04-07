@@ -8,6 +8,14 @@ export class OrderView extends DynamicForm<OrderForm> {
 	protected _paymentCash: HTMLButtonElement;
 	protected _addressInput: HTMLInputElement;
 
+	private _handleFirstAddressInput = () => {
+		this.events.emit('order:address-started');
+		this._addressInput.removeEventListener(
+			'input',
+			this._handleFirstAddressInput
+		);
+	};
+
 	constructor(container: HTMLFormElement, events: EventEmitter) {
 		super(container, events);
 
@@ -48,12 +56,8 @@ export class OrderView extends DynamicForm<OrderForm> {
 			this.onInputChange('address', this._addressInput.value);
 		});
 
-		// Отправляем "address-started" только при первом вводе
-		const handleFirstInput = () => {
-			this.events.emit('order:address-started');
-			this._addressInput.removeEventListener('input', handleFirstInput);
-		};
-		this._addressInput.addEventListener('input', handleFirstInput);
+		// Первый ввод в поле адреса → включаем валидацию
+		this._addressInput.addEventListener('input', this._handleFirstAddressInput);
 	}
 
 	set payment(value: PaymentMethod) {
@@ -70,5 +74,12 @@ export class OrderView extends DynamicForm<OrderForm> {
 		this._paymentCard.classList.remove('button_alt-active');
 		this._paymentCash.classList.remove('button_alt-active');
 		this._addressInput.value = '';
+
+		// Повторно навешиваем слушатель "первого ввода" при сбросе формы
+		this._addressInput.removeEventListener(
+			'input',
+			this._handleFirstAddressInput
+		); // на всякий случай
+		this._addressInput.addEventListener('input', this._handleFirstAddressInput);
 	}
 }

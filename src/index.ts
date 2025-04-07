@@ -32,6 +32,8 @@ const basketModel = new BasketModel(events);
 const catalogModel = new CatalogModel(events);
 const orderModel = new OrderModel(events);
 
+let wasOrderSuccess = false; // Флаг, указывающий на успешный заказ
+
 // Шаблоны
 const cardCatalogTemplate = ensureElement<HTMLTemplateElement>('#card-catalog');
 const cardPreviewTemplate = ensureElement<HTMLTemplateElement>('#card-preview');
@@ -94,35 +96,24 @@ events.on(
 
 // Контакты
 events.on('contacts:submit', () => {
-	const orderData = orderModel.getData();
+	const items = basketModel.items.map((item) => item.id);
+	const total = basketModel.total;
+	const orderData = orderModel.composeOrderData(items, total);
 
-	console.log('🔧 Параметры заказа:', {
-		payment: orderData.payment,
-		email: orderData.email,
-		phone: orderData.phone,
-		address: orderData.address,
-		items: basketModel.items,
-		total: basketModel.total,
-	});
+	console.log('🔧 Параметры заказа:', orderData);
 
 	api
-		.orderProduct({
-			payment: orderData.payment,
-			email: orderData.email,
-			phone: orderData.phone,
-			address: orderData.address,
-			items: basketModel.items.map((item) => item.id),
-			total: basketModel.total,
-		} as IOrder)
+		.orderProduct(orderData)
+
 		.then((result: IOrderResult) => {
 			console.log('Заказ успешно оформлен:', result);
+			wasOrderSuccess = true; // устанавливаем флаг
 
 			const successView = new OrderResultView(
 				cloneTemplate(ensureElement<HTMLTemplateElement>('#success')),
 				{
 					onClick: () => {
-						popup.close();
-						basketModel.clear();
+						events.emit('order:completed');
 					},
 				}
 			);
@@ -137,11 +128,14 @@ events.on('contacts:submit', () => {
 
 // Форма заказа
 events.on('order:open', () => {
-	orderView.resetForm();
+	orderModel.reset(); // Сброс состояния модели
+	orderView.resetForm(); // Сброс визуальной формы и повторное навешивание слушателей
+	page.setLocked(true); // Блокировка скролла страницы
 	popup.open(orderView.render());
 });
 
 events.on('order:submit', () => {
+	contactsView.resetForm(); // очищаем поля email и phone
 	const contactsForm = contactsView.render();
 	popup.open(contactsForm);
 });
@@ -195,8 +189,6 @@ events.on('basket:open', () => {
 
 events.on('basket:changed', () => {
 	page.setCounter(basketModel.items.length);
-	orderModel.setItems(basketModel.items.map((item) => item.id));
-	orderModel.setTotal(basketModel.total);
 });
 
 // Каталог товаров
@@ -252,6 +244,11 @@ events.on('popup:open', () => {
 
 events.on('popup:close', () => {
 	page.setLocked(false);
+
+	if (wasOrderSuccess) {
+		basketModel.clear(); // очищаем корзину при закрытии вручную
+		wasOrderSuccess = false; // сбрасываем флаг
+	}
 });
 
 // Инициализация приложения
@@ -259,7 +256,6 @@ api
 	.getProductList()
 	.then((items: IProduct[]) => {
 		catalogModel.setItems(items);
-		events.emit('basket:changed');
 	})
 	.catch((err: Error) => {
 		console.error('Failed to load products:', err);
@@ -270,4 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (activeModal) {
 		activeModal.classList.remove('modal_active');
 	}
+});
+
+events.on('order:completed', () => {
+	basketModel.clear();
+	popup.close();
+	wasOrderSuccess = false;
 });

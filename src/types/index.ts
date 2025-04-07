@@ -60,6 +60,4 @@ export interface IOrder {
 	address: string;
 	items: string[];
 	total: number;
-	setPaymentMethod(): void;
-	setAddress(): void;
 }

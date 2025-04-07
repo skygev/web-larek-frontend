@@ -16,7 +16,7 @@ export class BasketModel extends Model<IBasketModel> implements IBasketModel {
 	add(item: IProduct): void {
 		this._items.set(item.id, item);
 		this._totalValue += item.price ?? 0;
-		this.emitChanges('basket:changed', this.getData());
+		this.emitChanges('basket:changed');
 	}
 
 	remove(id: string): void {
